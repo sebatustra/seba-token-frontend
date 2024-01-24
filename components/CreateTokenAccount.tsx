@@ -4,12 +4,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { FC, useState } from "react";
 import styles from "../styles/Home.module.css";
 
-import {
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
+import * as token from "@solana/spl-token";
 
 export const CreateTokenAccountForm: FC = () => {
   const [txSig, setTxSig] = useState("");
@@ -27,8 +22,31 @@ export const CreateTokenAccountForm: FC = () => {
     if (!connection || !publicKey) {
       return;
     }
-    
-    // BUILD AND SEND CREATE TOKEN ACCOUNT TRANSACTION HERE
+
+    const ownerPublickey = new web3.PublicKey(event.target.owner.value);
+    const mintPublickey = new web3.PublicKey(event.target.mint.value); 
+
+    const transaction = new web3.Transaction();
+
+    const associatedTokenAddress = await token.getAssociatedTokenAddress(
+        mintPublickey,
+        ownerPublickey
+    );
+
+    const instruction = token.createAssociatedTokenAccountInstruction(
+        publicKey,
+        associatedTokenAddress,
+        ownerPublickey,
+        mintPublickey
+    );
+
+    transaction.add(instruction);
+
+    sendTransaction(transaction, connection).then((sig) => {
+        setTxSig(sig);
+        setTokenAccount(associatedTokenAddress.toString())
+    })
+
   };
 
   return (
